@@ -3,14 +3,13 @@ package tw.zero.aainputinjector
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Binder
 import android.os.IBinder
 import android.view.*
 import android.view.WindowManager.LayoutParams
-import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import androidx.core.view.updateLayoutParams
 
 class OverlayService : Service() {
@@ -93,31 +92,31 @@ class OverlayService : Service() {
         val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val view = inflater.inflate(R.layout.controller, interceptorLayout)
 
-        view.findViewById<Button>(R.id.btn_prev).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_prev).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_ROTARY_CONTROLLER, -1)
         }
 
-        view.findViewById<Button>(R.id.btn_enter).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_enter).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_ENTER, 0)
         }
 
-        view.findViewById<Button>(R.id.btn_next).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_next).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_ROTARY_CONTROLLER, 1)
         }
 
-        view.findViewById<Button>(R.id.btn_home).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_home).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_HOME, 0)
         }
 
-        view.findViewById<Button>(R.id.btn_map).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_map).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_NAVIGATION, 0)
         }
 
-        view.findViewById<Button>(R.id.btn_up).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_up).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_DPAD_UP, 0)
         }
 
-        view.findViewById<Button>(R.id.btn_down).setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btn_down).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_DPAD_DOWN, 0)
         }
 

@@ -22,8 +22,6 @@ class Hook : IXposedHookLoadPackage {
         }
         Log.i("CAR.SERVICE", "found car class in ${lpparam.packageName} - ${lpparam.processName}")
 
-        // com.google.android.gms.car.CarServiceBinder
-        // com.google.android.gms.car.CarServiceBinderImpl.Display
         XposedHelpers.findAndHookConstructor(
             "com.google.android.gms.car.senderprotocol.InputEndPoint",
             lpparam.classLoader,

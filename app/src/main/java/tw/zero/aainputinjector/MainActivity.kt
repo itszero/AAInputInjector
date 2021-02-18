@@ -1,7 +1,6 @@
 package tw.zero.aainputinjector
 
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri

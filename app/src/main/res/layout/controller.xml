@@ -10,6 +10,9 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:drawableEnd="@drawable/ic_drag"
+        android:drawableTint="#FFFFFF"
+        android:padding="12dp"
         android:singleLine="true"
         android:text="Android Auto Input"
         android:textAlignment="center"
@@ -23,43 +26,36 @@
         android:layout_weight="2"
         android:orientation="horizontal">
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_prev"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="6dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:text="Prev"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_prev"
+            android:tint="#FFFFFF"
+            app:icon="@drawable/abc_vector_test" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_enter"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="3dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:insetBottom="6dp"
-            android:text="Enter"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_enter"
+            android:tint="#FFFFFF" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_next"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="3dp"
-            android:insetTop="6dp"
-            android:insetRight="6dp"
-            android:insetBottom="6dp"
-            android:text="Next"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_next"
+            android:tint="#FFFFFF" />
 
     </LinearLayout>
 
@@ -69,53 +65,45 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_home"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="6dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:text="Home"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_home"
+            android:tint="#FFFFFF" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_map"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="6dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:text="Map"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_nav"
+            android:tint="#FFFFFF" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_up"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="6dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:text="Up"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_up"
+            android:tint="#FFFFFF" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_down"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#D50000"
-            android:insetLeft="6dp"
-            android:insetTop="6dp"
-            android:insetRight="3dp"
-            android:text="Down"
-            android:textColor="#FFFFFF" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_down"
+            android:tint="#FFFFFF" />
 
     </LinearLayout>
 </LinearLayout>
