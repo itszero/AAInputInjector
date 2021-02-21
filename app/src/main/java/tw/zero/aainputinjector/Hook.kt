@@ -14,6 +14,7 @@ import java.io.StringWriter
 
 class Hook : IXposedHookLoadPackage {
     var callback: Any? = null
+    var ctx: Context? = null
 
     @Throws(Throwable::class)
     override fun handleLoadPackage(lpparam: LoadPackageParam) {
@@ -21,6 +22,8 @@ class Hook : IXposedHookLoadPackage {
             return
         }
         Log.i("CAR.SERVICE", "found car class in ${lpparam.packageName} - ${lpparam.processName}")
+
+        // - Controller
 
         XposedHelpers.findAndHookConstructor(
             "com.google.android.gms.car.senderprotocol.InputEndPoint",
@@ -62,7 +65,7 @@ class Hook : IXposedHookLoadPackage {
         val injectKeyEventBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val keyCode = intent!!.getIntExtra("keyCode", 0)
-                val delta = intent!!.getIntExtra("delta", 0)
+                val delta = intent.getIntExtra("delta", 0)
                 if (callback != null) {
                     if (keyCode == AAKeyCode.KEYCODE_ROTARY_CONTROLLER.keyCode) {
                         Log.i("CAR.SERVICE", "Inject scroll event, delta = $delta")
@@ -87,8 +90,9 @@ class Hook : IXposedHookLoadPackage {
             object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam?) {
                     val app = param!!.thisObject as Application
-                    Log.i("CAR.SERVICE", "register broadcast receiver")
                     app.registerReceiver(injectKeyEventBroadcastReceiver, IntentFilter(Utils.intent_inject_key))
+
+                    ctx = app.applicationContext
                 }
             }
         )
@@ -101,8 +105,40 @@ class Hook : IXposedHookLoadPackage {
                 override fun afterHookedMethod(param: MethodHookParam?) {
                     val app = param!!.thisObject as Application
                     app.unregisterReceiver(injectKeyEventBroadcastReceiver)
+
+                    ctx = null
                 }
             }
+        )
+
+        // - Media keys
+
+        XposedHelpers.findAndHookMethod(
+                "fkb", /* GhFacetTracker */
+                lpparam.classLoader,
+                "g", /* updateGsaWithNewFacet */
+                Intent::class.java,
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam?) {
+                        val facetTrackerClass = param!!.thisObject::class.java
+                        val facetTypeObserverField = facetTrackerClass.getDeclaredField("d")
+                        facetTypeObserverField.isAccessible = true
+                        val facetTypeObserver = facetTypeObserverField.get(param.thisObject)
+                        val facetTypeObj = XposedHelpers.callMethod(facetTypeObserver, "h")
+                        val facetTypeOrdinal = XposedHelpers.callMethod(facetTypeObj, "a")
+
+                        val facetType = AAFacetType.values().firstOrNull { it.ordinal == facetTypeOrdinal }
+
+                        if (facetType == null) {
+                            Log.i("CAR.SERVICE", "app changed, facetType = unknown (${facetTypeOrdinal})")
+                        } else {
+                            Log.i("CAR.SERVICE", "app changed, facetType = ${facetType}")
+                            val intent = Intent(Utils.intnet_facet_changed)
+                            intent.putExtra("facetType", facetType.name)
+                            ctx?.sendBroadcast(intent)
+                        }
+                    }
+                }
         )
     }
 

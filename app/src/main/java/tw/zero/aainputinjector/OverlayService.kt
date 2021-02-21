@@ -1,8 +1,10 @@
 package tw.zero.aainputinjector
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Binder
 import android.os.IBinder
@@ -14,6 +16,7 @@ import androidx.core.view.updateLayoutParams
 
 class OverlayService : Service() {
     private var overlayView: View? = null
+    private var currentAppFacet: AAFacetType = AAFacetType.UNKNOWN_FACET
 
     inner class LocalBinder : Binder() {
         // Return this instance of LocalService so clients can call public methods
@@ -27,6 +30,20 @@ class OverlayService : Service() {
 
     val isOverlayActive
         get() = overlayView != null
+
+    private val facetUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val facetTypeStr = intent!!.getStringExtra("facetType")
+            val facetType = AAFacetType.valueOf(facetTypeStr!!)
+            currentAppFacet = facetType
+            updateView(null)
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        registerReceiver(facetUpdateReceiver, IntentFilter(Utils.intnet_facet_changed))
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -108,10 +125,6 @@ class OverlayService : Service() {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_HOME, 0)
         }
 
-        view.findViewById<ImageButton>(R.id.btn_map).setOnClickListener {
-            Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_NAVIGATION, 0)
-        }
-
         view.findViewById<ImageButton>(R.id.btn_up).setOnClickListener {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_DPAD_UP, 0)
         }
@@ -120,6 +133,24 @@ class OverlayService : Service() {
             Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_DPAD_DOWN, 0)
         }
 
+        updateView(view)
+
         return view
+    }
+
+    private fun updateView(view: View?) {
+        val viewToUse = (view ?: overlayView) ?: return
+
+        viewToUse.findViewById<ImageButton>(R.id.btn_alt_app).setOnClickListener {
+            if (currentAppFacet !== AAFacetType.NAVIGATION) {
+                Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_NAVIGATION, 0)
+            } else {
+                Utils.sendKeyEvent(this, AAKeyCode.KEYCODE_MEDIA, 0)
+            }
+        }
+
+        viewToUse.findViewById<ImageButton>(R.id.btn_alt_app).setImageResource(
+            if (currentAppFacet == AAFacetType.NAVIGATION) R.drawable.ic_music else R.drawable.ic_nav
+        )
     }
 }
