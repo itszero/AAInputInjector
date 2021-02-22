@@ -12,16 +12,24 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.io.StringWriter
 
-class Hook : IXposedHookLoadPackage {
+class AndroidAutoHook : IXposedHookLoadPackage {
     var callback: Any? = null
     var ctx: Context? = null
+    var lastFacetType: AAFacetType = AAFacetType.UNKNOWN_FACET
 
     @Throws(Throwable::class)
     override fun handleLoadPackage(lpparam: LoadPackageParam) {
-        if (XposedHelpers.findClassIfExists("com.google.android.gms.car.senderprotocol.InputEndPoint", lpparam.classLoader) == null) {
+        if (XposedHelpers.findClassIfExists(
+                "com.google.android.gms.car.senderprotocol.InputEndPoint",
+                lpparam.classLoader
+            ) == null
+        ) {
             return
         }
-        Log.i("CAR.SERVICE", "found car class in ${lpparam.packageName} - ${lpparam.processName}")
+        Log.i(
+            "AAInputInjector",
+            "found car class in ${lpparam.packageName} - ${lpparam.processName}"
+        )
 
         // - Controller
 
@@ -33,7 +41,7 @@ class Hook : IXposedHookLoadPackage {
             object : XC_MethodHook() {
                 @Throws(Throwable::class)
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    Log.i("CAR.SERVICE", "InputEndPoint created, callback = ${param.args[0]}")
+                    Log.i("AAInputInjector", "InputEndPoint created, callback = ${param.args[0]}")
                     callback = param.args[0]
                 }
             }
@@ -57,7 +65,10 @@ class Hook : IXposedHookLoadPackage {
                         field.isAccessible = true
                         writer.append("${field.name} = ${field.get(qlu)}, ")
                     }
-                    Log.i("CAR.SERVICE", "${param.thisObject} - onKeyEvent ${writer.toString()}")
+                    Log.i(
+                        "AAInputInjector",
+                        "${param.thisObject} - onKeyEvent ${writer.toString()}"
+                    )
                 }
             }
         )
@@ -68,17 +79,26 @@ class Hook : IXposedHookLoadPackage {
                 val delta = intent.getIntExtra("delta", 0)
                 if (callback != null) {
                     if (keyCode == AAKeyCode.KEYCODE_ROTARY_CONTROLLER.keyCode) {
-                        Log.i("CAR.SERVICE", "Inject scroll event, delta = $delta")
+                        Log.i("AAInputInjector", "Inject scroll event, delta = $delta")
                         sendScrollEvent(callback!!, delta)
                     } else {
                         Log.i(
-                            "CAR.SERVICE",
+                            "AAInputInjector",
                             "Injecting key: ${
                                 AAKeyCode.values().firstOrNull { it.keyCode == keyCode }?.name
                             }($keyCode) delta: $delta"
                         )
                         sendKeyEvent(lpparam.classLoader, callback!!, keyCode)
                     }
+                }
+            }
+        }
+
+        val checkinBroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                // check if we're in the active android auto session
+                if (callback != null) {
+                    sendFacetType(lastFacetType)
                 }
             }
         }
@@ -90,7 +110,14 @@ class Hook : IXposedHookLoadPackage {
             object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam?) {
                     val app = param!!.thisObject as Application
-                    app.registerReceiver(injectKeyEventBroadcastReceiver, IntentFilter(Utils.intent_inject_key))
+                    app.registerReceiver(
+                        injectKeyEventBroadcastReceiver,
+                        IntentFilter(Utils.intent_inject_key)
+                    )
+                    app.registerReceiver(
+                        checkinBroadcastReceiver,
+                        IntentFilter(Utils.intent_checkin)
+                    )
 
                     ctx = app.applicationContext
                 }
@@ -105,6 +132,7 @@ class Hook : IXposedHookLoadPackage {
                 override fun afterHookedMethod(param: MethodHookParam?) {
                     val app = param!!.thisObject as Application
                     app.unregisterReceiver(injectKeyEventBroadcastReceiver)
+                    app.unregisterReceiver(checkinBroadcastReceiver)
 
                     ctx = null
                 }
@@ -114,35 +142,37 @@ class Hook : IXposedHookLoadPackage {
         // - Media keys
 
         XposedHelpers.findAndHookMethod(
-                "fkb", /* GhFacetTracker */
-                lpparam.classLoader,
-                "g", /* updateGsaWithNewFacet */
-                Intent::class.java,
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam?) {
-                        val facetTrackerClass = param!!.thisObject::class.java
-                        val facetTypeObserverField = facetTrackerClass.getDeclaredField("d")
-                        facetTypeObserverField.isAccessible = true
-                        val facetTypeObserver = facetTypeObserverField.get(param.thisObject)
-                        val facetTypeObj = XposedHelpers.callMethod(facetTypeObserver, "h")
-                        val facetTypeOrdinal = XposedHelpers.callMethod(facetTypeObj, "a")
+            "fkb", /* GhFacetTracker */
+            lpparam.classLoader,
+            "g", /* updateGsaWithNewFacet */
+            Intent::class.java,
+            object : XC_MethodHook() {
+                override fun afterHookedMethod(param: MethodHookParam?) {
+                    val facetTrackerClass = param!!.thisObject::class.java
+                    val facetTypeObserverField = facetTrackerClass.getDeclaredField("d")
+                    facetTypeObserverField.isAccessible = true
+                    val facetTypeObserver = facetTypeObserverField.get(param.thisObject)
+                    val facetTypeObj = XposedHelpers.callMethod(facetTypeObserver, "h")
+                    val facetTypeOrdinal = XposedHelpers.callMethod(facetTypeObj, "a")
 
-                        val facetType = AAFacetType.values().firstOrNull { it.ordinal == facetTypeOrdinal }
+                    val facetType =
+                        AAFacetType.values().firstOrNull { it.ordinal == facetTypeOrdinal }
 
-                        if (facetType == null) {
-                            Log.i("CAR.SERVICE", "app changed, facetType = unknown (${facetTypeOrdinal})")
-                        } else {
-                            Log.i("CAR.SERVICE", "app changed, facetType = ${facetType}")
-                            val intent = Intent(Utils.intnet_facet_changed)
-                            intent.putExtra("facetType", facetType.name)
-                            ctx?.sendBroadcast(intent)
-                        }
+                    if (facetType == null) {
+                        Log.i(
+                            "AAInputInjector",
+                            "app changed, facetType = unknown ($facetTypeOrdinal)"
+                        )
+                    } else {
+                        lastFacetType = facetType
+                        sendFacetType(facetType)
                     }
                 }
+            }
         )
     }
 
-    fun sendKeyEvent(classLoader: ClassLoader, callback: Any, keyCode: Int) {
+    private fun sendKeyEvent(classLoader: ClassLoader, callback: Any, keyCode: Int) {
         val keyEventDown = XposedHelpers.newInstance(
             XposedHelpers.findClass(
                 "qlu",
@@ -170,7 +200,14 @@ class Hook : IXposedHookLoadPackage {
         XposedHelpers.callMethod(callback, "n", keyEventUp)
     }
 
-    fun sendScrollEvent(callback: Any, delta: Int) {
+    private fun sendScrollEvent(callback: Any, delta: Int) {
         XposedHelpers.callMethod(callback, "q", AAKeyCode.KEYCODE_ROTARY_CONTROLLER.keyCode, delta)
+    }
+
+    private fun sendFacetType(facetType: AAFacetType) {
+        Log.i("AAInputInjector", "app changed, facetType = $facetType")
+        val intent = Intent(Utils.intent_facet_changed)
+        intent.putExtra("facetType", facetType.name)
+        ctx?.sendBroadcast(intent)
     }
 }

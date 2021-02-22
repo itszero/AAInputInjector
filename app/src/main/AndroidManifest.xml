@@ -33,7 +33,9 @@
             android:exported="false" />
     </application>
 
-
+    <queries>
+        <package android:name="com.eyelights.intercom" />
+    </queries>
 
     <uses-permission android:name="android.permission.ACTION_MANAGE_OVERLAY_PERMISSION" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />

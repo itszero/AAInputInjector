@@ -60,6 +60,35 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/layout_eyeride_volume"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_vol_down"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:backgroundTint="#D50000"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_vol_down"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btn_vol_up"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:backgroundTint="#D50000"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_vol_up"
+            android:tint="#FFFFFF" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
