@@ -12,6 +12,8 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import java.io.StringWriter
 
+const val DEBUG_DUMP_KEYEVENT = false
+
 class AndroidAutoHook : IXposedHookLoadPackage {
     var callback: Any? = null
     var ctx: Context? = null
@@ -47,31 +49,33 @@ class AndroidAutoHook : IXposedHookLoadPackage {
             }
         )
 
-        XposedHelpers.findAndHookMethod(
-            "cad",
-            lpparam.classLoader,
-            "a",
-            "qlu",
-            Int::class.java, // longpress = 0
-            Int::class.java, // repeatcount = 0
-            object : XC_MethodHook() {
-                @Throws(Throwable::class)
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val writer = StringWriter()
-                    val qlu = param.args[0]
-                    writer.append("qlu: ")
-                    val fields = qlu::class.java.declaredFields
-                    for (field in fields) {
-                        field.isAccessible = true
-                        writer.append("${field.name} = ${field.get(qlu)}, ")
+        if (DEBUG_DUMP_KEYEVENT) {
+            XposedHelpers.findAndHookMethod(
+                "cad",
+                lpparam.classLoader,
+                "a",
+                "qlu",
+                Int::class.java, // longpress = 0
+                Int::class.java, // repeatcount = 0
+                object : XC_MethodHook() {
+                    @Throws(Throwable::class)
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        val writer = StringWriter()
+                        val qlu = param.args[0]
+                        writer.append("qlu: ")
+                        val fields = qlu::class.java.declaredFields
+                        for (field in fields) {
+                            field.isAccessible = true
+                            writer.append("${field.name} = ${field.get(qlu)}, ")
+                        }
+                        Log.i(
+                            "AAInputInjector",
+                            "${param.thisObject} - onKeyEvent ${writer.toString()}"
+                        )
                     }
-                    Log.i(
-                        "AAInputInjector",
-                        "${param.thisObject} - onKeyEvent ${writer.toString()}"
-                    )
                 }
-            }
-        )
+            )
+        }
 
         val injectKeyEventBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -149,9 +153,7 @@ class AndroidAutoHook : IXposedHookLoadPackage {
             object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam?) {
                     val facetTrackerClass = param!!.thisObject::class.java
-                    val facetTypeObserverField = facetTrackerClass.getDeclaredField("d")
-                    facetTypeObserverField.isAccessible = true
-                    val facetTypeObserver = facetTypeObserverField.get(param.thisObject)
+                    val facetTypeObserver = XposedHelpers.getObjectField(param.thisObject, "d")
                     val facetTypeObj = XposedHelpers.callMethod(facetTypeObserver, "h")
                     val facetTypeOrdinal = XposedHelpers.callMethod(facetTypeObj, "a")
 

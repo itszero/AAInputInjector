@@ -113,7 +113,7 @@ class CaptainRiderHook : IXposedHookLoadPackage {
                     if (!isConnectionStateMonitorSetup) {
                         isConnectionStateMonitorSetup = true
                         sendReport(lpparam.classLoader)
-                        
+
                         val connectionStateSubject = param!!.result
                         val observerProxy =
                             InvocationHandler { proxy, method, args ->
